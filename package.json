@@ -1,0 +1,14 @@
+{
+  "name": "galeria-backend",
+  "version": "1.0.0",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemailer": "^7.0.6",
+    "pg": "^8.11.3"
+  }
+}
