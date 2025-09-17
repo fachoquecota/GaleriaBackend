@@ -4,6 +4,7 @@ import {
   validarCodigoService
 } from '../services/auth.service.js';
 import { sendMail } from '../utils/mailer.js';
+import jwt from 'jsonwebtoken';
 
 export const loginUsuario = async (req, res) => {
   try {
@@ -35,7 +36,11 @@ export const validarCodigo = async (req, res) => {
     const { usuario_id, codigo } = req.body;
     const valido = await validarCodigoService(usuario_id, codigo);
     if (valido) {
-      res.json({ success: true, mensaje: 'Acceso concedido' });
+      // Generar token JWT
+      const payload = { usuario_id };
+      const secret = process.env.JWT_SECRET || 'galeria_secret_key';
+      const token = jwt.sign(payload, secret, { expiresIn: '2h' });
+      res.json({ success: true, mensaje: 'Acceso concedido', token });
     } else {
       res.status(401).json({ success: false, error: 'Código inválido' });
     }

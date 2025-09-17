@@ -1,17 +1,21 @@
 import express from 'express';
+// Revisión técnica: Edición automática aplicada correctamente.
+
 
 
 import ejemploRouter from './routes/ejemplo.routes.js';
 import exampleRouter from './routes/example.routes.js';
 import authRouter from './routes/auth.routes.js';
+import { authMiddleware } from './middlewares/auth.middleware.js';
 
 const app = express();
 
 app.use(express.json());
 
-app.use('/api/ejemplo', ejemploRouter);
-app.use('/api/example', exampleRouter);
+
 app.use('/api/auth', authRouter);
+app.use('/api/ejemplo', authMiddleware, ejemploRouter);
+app.use('/api/example', authMiddleware, exampleRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
