@@ -36,11 +36,45 @@ export const validarCodigo = async (req, res) => {
     const { usuario_id, codigo } = req.body;
     const valido = await validarCodigoService(usuario_id, codigo);
     if (valido) {
-      // Generar token JWT
-      const payload = { usuario_id };
+      const { pool } = await import('../config/db.js');
+      // Obtener datos del usuario y su rol
+      const userResult = await pool.query('SELECT * FROM get_usuario_rol($1)', [usuario_id]);
+      const usuario = userResult.rows[0];
+      // Obtener menús y submenús asignados al rol usando funciones almacenadas
+      const menusResult = await pool.query('SELECT * FROM get_menus_por_rol($1)', [usuario.rol_id]);
+      const submenusResult = await pool.query('SELECT * FROM get_submenus_por_rol($1)', [usuario.rol_id]);
+      // Construir estructura de menús con submenús anidados
+      const submenus = submenusResult.rows;
+      const buildSubmenus = (menuId, padreId = null) => {
+        return submenus
+          .filter(s => s.menu_id === menuId && s.padre_id === padreId)
+          .map(s => ({
+            id: s.id,
+            nombre: s.nombre,
+            icono: s.icono,
+            submodulos: buildSubmenus(menuId, s.id)
+          }));
+      };
+      const menus = menusResult.rows.map(m => ({
+        id: m.id,
+        nombre: m.nombre,
+        icono: m.icono,
+        submodulos: buildSubmenus(m.id)
+      }));
+      // Generar token JWT con datos extra
+      const payload = {
+        usuario_id: usuario.id,
+        correo: usuario.correo,
+        nombre: usuario.nombre,
+        rol: usuario.rol || 'admin',
+        menus
+      };
       const secret = process.env.JWT_SECRET || 'galeria_secret_key';
-      const token = jwt.sign(payload, secret, { expiresIn: '2h' });
-      res.json({ success: true, mensaje: 'Acceso concedido', token });
+      const token = jwt.sign(payload, secret, { expiresIn: '24h' });
+      res.json({
+        success: true,
+        token
+      });
     } else {
       res.status(401).json({ success: false, error: 'Código inválido' });
     }
